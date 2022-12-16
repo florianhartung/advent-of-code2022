@@ -1,57 +1,96 @@
 extern crate core;
 
 use std::borrow::Borrow;
-use std::env;
-use std::fmt::{Debug, Display, Formatter};
-use std::fs::{File, read};
-use std::io::{BufReader, Write};
-use std::process::Termination;
-use crate::aoc::AocDaySolver;
+use std::env::Args;
+use std::fs::File;
+use std::future::{IntoFuture};
+use std::io::{BufReader, BufWriter, Write};
+
+use anyhow::{Context, Result};
+use chrono::Datelike;
+use clap::Parser;
+
+use crate::config::Config;
 
 mod aoc;
+mod config;
 
-pub enum Error {
-    NoDayGiven,
-    InputFileReading,
-    InvalidDay,
-}
+const INPUT_PATH_FOR_DAY: fn(u32) -> String = |day: u32| format!("./inputs/day{}.txt", day);
 
-type Result<T> = std::result::Result<T, Error>;
+#[tokio::main]
+async fn main() -> Result<()> {
+    let args = Args::parse();
 
-impl Debug for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Error::NoDayGiven => write!(f, "Expected a day as the first argument!"),
-            Error::InputFileReading => write!(f, "Unable to read input file for requested day!"),
-            Error::InvalidDay => write!(f, "Invalid day!"),
-        }
-    }
-}
+    let config: Config = args.into();
 
-fn main() -> Result<()> {
-    let day = read_day_from_args()?;
+    println!("Selected day {}", config.day);
 
-    let input_file = open_input_file(day)?;
+    let input = read_inputs_for_day(&config).await?;
 
-    let output = aoc::solve(day, input_file)?;
+    let answer = aoc::solve(config.day, input)?;
 
-    println!("[Day {day}] {}, {}", output.first, output.second);
+    println!("[Day {}] {}, {}", config.day, answer.first, answer.second);
 
     Ok(())
 }
 
-fn read_day_from_args() -> Result<u32> {
-    env::args()
-        .skip(1)
-        .next()
-        .ok_or(Error::NoDayGiven)?
-        .parse::<u32>()
-        .map_err(|_| Error::InvalidDay)
+/// Returns the inputs for a day specified in the `Config`.
+///
+/// If the inputs for that day are not already locally stored,
+/// they will be downloaded using the session from the `RemoteConfig` inside of the `Config`
+/// and then read from the just downloaded file.
+async fn read_inputs_for_day(config: &Config) -> Result<BufReader<File>> {
+    let from_file = read_input_file_for_day(config.day);
+
+    if from_file.is_ok() {
+        return from_file;
+    }
+
+
+    /*let f = poll_fn(|_| {
+        download_inputs_for_day(&config)
+            .with_context()
+            .map(read_input_file)
+    });*/
+
+    todo!()
 }
 
-fn open_input_file(day: u32) -> Result<BufReader<File>> {
-    let input_file = File::open(format!("./res/day{}.txt", day))
-        .map_err(|_| Error::InputFileReading)?;
+async fn download_inputs_for_day(config: &Config) -> Result<File> {
+    let session_token: &str = config.remote_config
+        .as_ref()
+        .with_context(|| "Could not download input because session token is missing")?
+        .session
+        .borrow();
 
-    Ok(BufReader::new(input_file))
+    let mut response = reqwest::Client::new()
+        .get(format!("https://adventofcode.com/{}/day/{}/input", config.year, config.day))
+        .header("session", session_token)
+        .send()
+        .await?;
+
+    let file_path = INPUT_PATH_FOR_DAY(config.day);
+    let file = File::open(file_path)?;
+    let mut writer = BufWriter::new(file);
+
+    while let Some(chunk) = response.chunk().await? {
+        writer.write(chunk.as_ref())?;
+    }
+
+    let file = writer.into_inner()?;
+
+    Ok(file)
+}
+
+fn read_input_file(file: File) -> BufReader<File> {
+    BufReader::new(file)
+}
+
+fn read_input_file_for_day(day: u32) -> Result<BufReader<File>> {
+    let file_path = INPUT_PATH_FOR_DAY(day);
+
+    let input_file = File::open(&file_path)
+        .with_context(|| format!("Could not open file `{}`", file_path))?;
+
+    Ok(read_input_file(input_file))
 }

@@ -1,13 +1,11 @@
 use std::fmt::Display;
 use std::fs::File;
 use std::io::BufReader;
+use anyhow::{bail, Result};
 
-use crate::{Error, Result};
 use crate::aoc::day1::Day1;
 
 pub mod day1;
-
-pub type AocInput = BufReader<File>;
 
 pub struct AocOutput {
     pub first: Box<dyn Display>,
@@ -28,11 +26,9 @@ pub trait AocDaySolver {
 }
 
 pub fn solve(day: u32, input: BufReader<File>) -> Result<AocOutput> {
-    let output = match day {
-        1 => Day1::solve(input),
-        _ => return Err(Error::InvalidDay),
-    };
-
-    Ok(output)
+    match day {
+        1 => Ok(Day1::solve(input)),
+        _ => bail!("Invalid or unimplemented day"),
+    }
 }
 
