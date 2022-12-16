@@ -1,20 +1,32 @@
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum RpsShape {
-    ROCK,
-    PAPER,
-    SCISSORS,
+    Rock,
+    Paper,
+    Scissors,
 }
 
 impl RpsShape {
-    fn wins_against(&self, other: RpsShape) -> bool {
+    fn is_winning_against(&self, other: RpsShape) -> bool {
         if *self == other {
             return false;
         }
 
+        other == self.get_wins_against()
+    }
+
+    pub fn get_wins_against(&self) -> RpsShape {
         match *self {
-            Self::ROCK => other == Self::SCISSORS,
-            Self::PAPER => other == Self::ROCK,
-            Self::SCISSORS => other == Self::PAPER,
+            Self::Rock => Self::Scissors,
+            Self::Paper => Self::Rock,
+            Self::Scissors => Self::Paper,
+        }
+    }
+
+    pub fn get_looses_against(&self) -> RpsShape {
+        match *self {
+            Self::Rock => Self::Paper,
+            Self::Paper => Self::Scissors,
+            Self::Scissors => Self::Rock,
         }
     }
 }
@@ -27,7 +39,7 @@ pub struct RpsRound {
 impl RpsRound {
     pub fn into_score(self) -> u32 {
         let is_draw = self.player == self.opponent;
-        let is_win = self.player.wins_against(self.opponent);
+        let is_win = self.player.is_winning_against(self.opponent);
 
         let mut score = if is_draw { 3 } else if is_win { 6 } else { 0 };
 
@@ -38,11 +50,11 @@ impl RpsRound {
 }
 
 fn player_points_by_shape(shape: RpsShape) -> u32 {
-    use RpsShape::{ROCK, PAPER, SCISSORS};
+    use RpsShape::{Rock, Paper, Scissors};
 
     match shape {
-        ROCK => 1,
-        PAPER => 2,
-        SCISSORS => 3,
+        Rock => 1,
+        Paper => 2,
+        Scissors => 3,
     }
 }

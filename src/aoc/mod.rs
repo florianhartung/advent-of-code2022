@@ -20,6 +20,7 @@ impl AocOutput {
         }
     }
 
+    #[allow(dead_code)]
     pub fn todo() -> Self {
         Self {
             first: Box::new("TODO"),
