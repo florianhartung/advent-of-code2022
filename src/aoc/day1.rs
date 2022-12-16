@@ -1,19 +1,27 @@
+use std::cmp::Reverse;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+
+use itertools::Itertools;
 
 use crate::aoc::{AocDaySolver, AocOutput};
 
 pub struct Day1;
+
 impl AocDaySolver for Day1 {
-
     fn solve(input: BufReader<File>) -> AocOutput {
-        let max_calories = input.lines()
+        let top_3_elves = input.lines()
             .map_while(Result::ok)
-            .collect::<Vec<String>>()
-            .split(String::is_empty)
-            .map(|slice| slice.iter().flat_map(|line| line.trim().parse::<u32>()).sum())
-            .max();
+            .map(|line| line.parse::<u32>().ok())
+            .batching(|it| it.while_some().sum1::<u32>())
+            .map(Reverse)
+            .k_smallest(3)
+            .map(|x| x.0)
+            .collect::<Vec<u32>>();
 
-        AocOutput::from(max_calories.unwrap_or(0), 0)
+        let elf_with_max_calories = *top_3_elves.first().unwrap_or(&0);
+        let top3_elves_with_max_calories: u32 = top_3_elves.into_iter().sum();
+
+        AocOutput::from(elf_with_max_calories, top3_elves_with_max_calories)
     }
 }
