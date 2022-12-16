@@ -1,79 +1,38 @@
-use std::fmt::{Debug, Formatter};
+extern crate core;
+
 use std::fs::File;
-use std::io;
-use std::io::{BufReader, Write};
-use std::process::{ExitCode, Termination};
+use std::io::{BufReader};
 
-use crate::day1::day1_solution;
+use anyhow::{Context, Result};
 
-mod day1;
+mod aoc;
 
-pub(crate) enum Error {
-    DayInput,
-    InvalidDay,
-    FileInput,
-    InputParsing,
-    #[allow(dead_code)]
-    Solution(String),
+const INPUT_PATH_FOR_DAY: fn(u32) -> String = |day: u32| format!("./inputs/day{}.txt", day);
+
+fn main() -> Result<()> {
+    let day: u32 = std::env::args()
+        .skip(1)
+        .next()
+        .with_context(|| "No day given as argument")?
+        .parse()
+        .with_context(|| "Invalid day given as argument")?;
+
+    println!("Selected day {}", day);
+
+    let input_for_day = read_input_file_for_day(day)?;
+
+    let answer = aoc::solve(day, input_for_day)?;
+
+    println!("[Day {}] {}, {}", day, answer.first, answer.second);
+
+    Ok(())
 }
 
-type Result<T> = std::result::Result<T, Error>;
+fn read_input_file_for_day(day: u32) -> Result<BufReader<File>> {
+    let file_path = INPUT_PATH_FOR_DAY(day);
 
-impl Debug for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Error::DayInput => write!(f, "Could not read input"),
-            Error::InvalidDay => write!(f, "Expected a day from 1 to 24"),
-            Error::FileInput => write!(f, "Could not read file for requested day"),
-            Error::InputParsing => write!(f, "Invalid input file contents"),
-            Error::Solution(msg) => write!(f, "Error whilst trying to execute solution for current day: {}", msg),
-        }
-    }
-}
+    let input_file = File::open(&file_path)
+        .with_context(|| format!("Could not open file `{}`", file_path))?;
 
-fn main() -> ExitCode {
-    let f = unsafe { File::open("./res/day1.txt").unwrap_unchecked() };
-    let reader = BufReader::new(f);
-    return ExitCode::from(unsafe { day1_solution(reader) } as u8);
-
-
-    /*let day = read_day_from_stdin("Day: ")?;
-
-    let input_file = open_input_file(day)
-        .map_err(|_| Error::FileInput)?;
-
-    match day {
-        1 => day1_solution(input_file),
-        _ => {}
-    };
-
-    Ok(())*/
-}
-
-fn read_day_from_stdin(prompt: &str) -> Result<u32> {
-    let mut day: String = String::new();
-
-    print!("{prompt}");
-    io::stdout()
-        .flush()
-        .map_err(|_| Error::DayInput)?;
-
-    io::stdin()
-        .read_line(&mut day)
-        .map_err(|_| Error::DayInput)?;
-
-    let day: u32 = day.trim()
-        .parse::<u32>()
-        .map_err(|_| Error::InputParsing)?;
-
-    match day {
-        1..=24 => Ok(day),
-        _ => Err(Error::InvalidDay),
-    }
-}
-
-unsafe fn open_input_file(day: u32) -> BufReader<File> {
-    let input_file = File::open(format!("./res/day{}.txt", day)).unwrap_unchecked();
-
-    BufReader::new(input_file)
+    Ok(BufReader::new(input_file))
 }
