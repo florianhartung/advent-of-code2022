@@ -5,6 +5,7 @@ use std::io::BufReader;
 use anyhow::{bail, Result};
 
 pub mod day1;
+pub mod day2;
 
 pub struct AocOutput {
     pub first: Box<dyn Display>,
@@ -28,9 +29,12 @@ impl AocOutput {
 }
 
 pub fn solve(day: u32, input: BufReader<File>) -> Result<AocOutput> {
-    match day {
-        1 => Ok(day1::solve(input)),
+    let solve_fn = match day {
+        1 => day1::solve,
+        2 => day2::solve,
         _ => bail!("Invalid or unimplemented day"),
-    }
+    };
+
+    Ok(solve_fn(input))
 }
 
