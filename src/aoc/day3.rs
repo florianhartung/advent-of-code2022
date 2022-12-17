@@ -6,11 +6,7 @@ use crate::aoc::AocOutput;
 pub fn solve(input: BufReader<File>) -> AocOutput {
     let total_priorities: u32 = input.lines()
         .map_while(Result::ok)
-        .map(|rucksack| {
-            let d = get_double_item(rucksack);
-            dbg!(&d);
-            d
-        })
+        .map(get_double_item)
         .map(get_item_priority)
         .sum();
 
