@@ -6,6 +6,7 @@ use anyhow::{bail, Result};
 
 pub mod day1;
 pub mod day2;
+pub mod day3;
 
 pub struct AocOutput {
     pub first: Box<dyn Display>,
@@ -18,6 +19,14 @@ impl AocOutput {
             first: Box::new(first),
             second: Box::new(second),
         }
+    }
+
+    pub fn first(first: impl Display + 'static) -> Self {
+        Self::from(first, "---")
+    }
+
+    pub fn second(second: impl Display + 'static) -> Self {
+        Self::from("---", second)
     }
 
     #[allow(dead_code)]
@@ -33,6 +42,7 @@ pub fn solve(day: u32, input: BufReader<File>) -> Result<AocOutput> {
     let solve_fn = match day {
         1 => day1::solve,
         2 => day2::solve,
+        3 => day3::solve,
         _ => bail!("Invalid or unimplemented day"),
     };
 
