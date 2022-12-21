@@ -9,14 +9,10 @@ pub fn solve(input: BufReader<File>) -> AocOutput {
     let total_priorities: u32 = input.lines()
         .map_while(Result::ok)
         .batching(|it| {
-            // Option::from(it.take(3).collect_vec())
-            //     .filter(|vec| !vec.is_empty())
             let next3 = it.take(3).collect_vec();
-            let a = Option::from(next3);
-            Some(a.filter(|vec| !vec.is_empty()))
-            // (!next3.is_empty()).then(|| Some(next3))
+            Option::from(next3)
+                .filter(|vec| !vec.is_empty())
         })
-        .while_some()
         .map(get_common_item_priority)
         .sum();
 
