@@ -13,6 +13,7 @@ pub struct AocOutput {
     pub second: Box<dyn Display>,
 }
 
+#[allow(dead_code)]
 impl AocOutput {
     pub fn from(first: impl Display + 'static, second: impl Display + 'static) -> Self {
         Self {
@@ -29,7 +30,6 @@ impl AocOutput {
         Self::from("---", second)
     }
 
-    #[allow(dead_code)]
     pub fn todo() -> Self {
         Self {
             first: Box::new("TODO"),
